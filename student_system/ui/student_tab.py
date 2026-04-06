@@ -1,8 +1,3 @@
-"""
-student_tab.py
-UI tab for Student CRUDL operations.
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 from core import student as repo
@@ -107,12 +102,13 @@ class StudentTab(tk.Frame):
     def _filter_courses(self, *_):
         typed = self._vars["course"].get().upper()
         filtered = [c for c in self._all_codes if typed in c] if typed else self._all_codes
-
+    
         self._listbox.delete(0, "end")
         for code in filtered:
             self._listbox.insert("end", code)
-
-        if filtered and typed:
+    
+        # Only show the dropdown if the user is actually typing in the box (has focus)
+        if filtered and typed and self.focus_get() == self._course_entry:
             x = self._course_entry.winfo_rootx()
             y = self._course_entry.winfo_rooty() + self._course_entry.winfo_height()
             self._listbox_frame.geometry(f"+{x}+{y}")

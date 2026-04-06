@@ -1,8 +1,3 @@
-"""
-program_tab.py
-UI tab for Program CRUDL operations.
-"""
-
 import tkinter as tk
 from tkinter import ttk, messagebox
 from core import program as repo

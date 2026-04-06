@@ -1,8 +1,3 @@
-"""
-program.py
-CRUDL operations for the program table.
-"""
-
 import re
 from core.database import get_connection
 

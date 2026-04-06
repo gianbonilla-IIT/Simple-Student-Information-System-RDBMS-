@@ -1,8 +1,3 @@
-"""
-college.py
-CRUDL operations for the college table.
-"""
-
 import re
 from core.database import get_connection
 

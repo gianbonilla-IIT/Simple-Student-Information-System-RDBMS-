@@ -1,15 +1,7 @@
-"""
-seeder.py
-Populates the database with:
-- Colleges (MSU-IIT based)
-- 30 Programs
-- 5000+ Students (randomly generated)
-Only runs if the tables are empty.
-"""
-
 import random
 import string
 from core.database import get_connection
+
 
 
 COLLEGES = [
@@ -154,28 +146,35 @@ def seed() -> None:
     genders = ["Male", "Female", "Other"]
     existing_ids: set[str] = set()
 
-    students = []
-    year_start = 2018
     existing_names: set[str] = set()
 
+    current_year = 2026
+    students = []
+    
     while len(students) < 5000:
-        year = random.randint(year_start, 2024)
+        # To limit to Year 4, the earliest enrollment year is 2022 (2026 - 2022 = 4)
+        # To include Year 1, the latest enrollment year is 2025 (2026 - 2025 = 1)
+        enrolled_year = random.randint(2022, 2025) 
         number = random.randint(1, 9999)
-        student_id = f"{year}-{number:04d}"
+        student_id = f"{enrolled_year}-{number:04d}"
+        
         if student_id in existing_ids:
             continue
 
         firstname = random.choice(FIRST_NAMES)
         lastname = random.choice(LAST_NAMES)
         full_name = f"{firstname} {lastname}"
+        
         if full_name in existing_names:
             continue
+
+        # Calculate year level: 2022=4, 2023=3, 2024=2, 2025=1
+        yr = current_year - enrolled_year 
 
         existing_ids.add(student_id)
         existing_names.add(full_name)
 
         course = random.choice(program_codes)
-        yr = random.randint(1, 5)
         gender = random.choices(genders, weights=[48, 48, 4])[0]
 
         students.append((student_id, firstname, lastname, course, yr, gender))

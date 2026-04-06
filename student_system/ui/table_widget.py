@@ -1,8 +1,3 @@
-"""
-table_widget.py
-Sortable, searchable, paginated Treeview table component.
-"""
-
 import tkinter as tk
 from tkinter import ttk
 

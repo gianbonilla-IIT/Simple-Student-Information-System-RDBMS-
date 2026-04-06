@@ -1,9 +1,3 @@
-"""
-database.py
-Manages the SQLite connection, schema creation, and provides
-a thread-safe connection context manager.
-"""
-
 import sqlite3
 import threading
 from pathlib import Path
