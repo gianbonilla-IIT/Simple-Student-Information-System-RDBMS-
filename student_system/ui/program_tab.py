@@ -10,6 +10,7 @@ COLUMNS = ["name", "code", "college"]
 class ProgramTab(tk.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
+        self._original_code = None  # Track the original code for updates
         self._build()
 
     def _build(self):
@@ -35,6 +36,7 @@ class ProgramTab(tk.Frame):
             row=0, column=1, sticky="w", padx=4)
 
         tk.Label(form_frame, text="Code:").grid(row=0, column=2, sticky="e", padx=4)
+        # Code field is now editable
         ttk.Entry(form_frame, textvariable=self._vars["code"], width=12).grid(
             row=0, column=3, sticky="w", padx=4)
 
@@ -58,6 +60,8 @@ class ProgramTab(tk.Frame):
     def _on_row_select(self, row: dict):
         for k, v in self._vars.items():
             v.set(row.get(k, ""))
+        # Track the original code for detecting code changes
+        self._original_code = row.get("code", "")
 
     def _clear(self):
         for v in self._vars.values():
@@ -75,13 +79,27 @@ class ProgramTab(tk.Frame):
 
     def _update(self):
         try:
-            repo.update(self._vars["code"].get(), self._vars["name"].get(),
-                        self._vars["college"].get())
+            current_code = self._vars["code"].get()
+            new_code = current_code if current_code == self._original_code else current_code
+            
+            if not self._original_code:
+                messagebox.showwarning("Warning", "Select a program first.")
+                return
+            
+            repo.update(
+                self._original_code,
+                self._vars["name"].get(),
+                self._vars["college"].get(),
+                new_code=new_code if new_code != self._original_code else None
+            )
             self.table.refresh()
+            
+            # If code was changed, update tracking
+            if new_code != self._original_code:
+                self._original_code = new_code
             messagebox.showinfo("Success", "Program updated.")
         except ValueError as e:
             messagebox.showerror("Error", str(e))
-
     def _delete(self):
         code = self._vars["code"].get()
         if not code:

@@ -56,26 +56,47 @@ def read(code: str) -> dict | None:
     return _row_to_dict(row) if row else None
 
 
-def update(code: str, name: str, college_code: str) -> dict:
+def update(code: str, name: str, college_code: str, new_code: str | None = None) -> dict:
+    """Update a program. If new_code is provided, changes the program code (cascades to students)."""
     code, name = code.strip().upper(), name.strip()
     college_code = college_code.strip().upper()
-    _validate(code, name, college_code)
+    new_code = new_code.strip().upper() if new_code else code
+    
+    _validate(new_code, name, college_code)
     conn = get_connection()
     try:
-        cur = conn.execute(
-            "UPDATE program SET name = ?, college = ? WHERE code = ?",
-            (name, college_code, code)
-        )
+        # If code is being changed, update the primary key (triggers ON UPDATE CASCADE)
+        if new_code != code:
+            # First, check if new code already exists
+            existing = conn.execute("SELECT code FROM program WHERE code = ?", (new_code,)).fetchone()
+            if existing:
+                raise ValueError(f"Program code '{new_code}' already exists.")
+            # Update program: this will cascade to all students' course field
+            conn.execute(
+                "UPDATE program SET code = ?, name = ?, college = ? WHERE code = ?",
+                (new_code, name, college_code, code)
+            )
+        else:
+            # Just update name and college
+            conn.execute(
+                "UPDATE program SET name = ?, college = ? WHERE code = ?",
+                (name, college_code, code)
+            )
         conn.commit()
-        if cur.rowcount == 0:
-            raise ValueError(f"Program '{code}' not found.")
-        return {"code": code, "name": name, "college": college_code}
+        
+        # Verify the update succeeded
+        row = conn.execute("SELECT * FROM program WHERE code = ?", (new_code,)).fetchone()
+        if not row:
+            raise ValueError(f"Program update failed.")
+        return _row_to_dict(row)
     except ValueError:
         raise
     except Exception as e:
         conn.rollback()
         if "FOREIGN KEY" in str(e):
             raise ValueError(f"College '{college_code}' does not exist.")
+        if "UNIQUE" in str(e):
+            raise ValueError(f"Program code '{new_code}' already exists.")
         raise ValueError(str(e))
 
 
