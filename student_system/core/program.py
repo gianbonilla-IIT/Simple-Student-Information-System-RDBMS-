@@ -9,7 +9,7 @@ def _row_to_dict(row) -> dict:
     return {"code": row["code"], "name": row["name"], "college": row["college"]}
 
 
-def _validate(code: str, name: str, college_code: str) -> None:
+def _validate(code: str, name: str, college_code: str | None) -> None:
     if not code:
         raise ValueError("Program code cannot be empty.")
     if len(code) > 20:
@@ -22,15 +22,14 @@ def _validate(code: str, name: str, college_code: str) -> None:
         raise ValueError("Program name must be 150 characters or fewer.")
     if not NAME_PATTERN.match(name):
         raise ValueError("Program name contains invalid characters.")
-    if not college_code:
-        raise ValueError("College code cannot be empty.")
-    if len(college_code) > 20:
+    # College code is now optional (can be NULL after college deletion)
+    if college_code and len(college_code) > 20:
         raise ValueError("College code must be 20 characters or fewer.")
 
 
-def create(code: str, name: str, college_code: str) -> dict:
+def create(code: str, name: str, college_code: str | None = None) -> dict:
     code, name = code.strip().upper(), name.strip()
-    college_code = college_code.strip().upper()
+    college_code = college_code.strip().upper() if college_code else None
     _validate(code, name, college_code)
     conn = get_connection()
     try:
@@ -56,10 +55,10 @@ def read(code: str) -> dict | None:
     return _row_to_dict(row) if row else None
 
 
-def update(code: str, name: str, college_code: str, new_code: str | None = None) -> dict:
+def update(code: str, name: str, college_code: str | None = None, new_code: str | None = None) -> dict:
     """Update a program. If new_code is provided, changes the program code (cascades to students)."""
     code, name = code.strip().upper(), name.strip()
-    college_code = college_code.strip().upper()
+    college_code = college_code.strip().upper() if college_code else None
     new_code = new_code.strip().upper() if new_code else code
     
     _validate(new_code, name, college_code)
@@ -112,10 +111,6 @@ def delete(code: str) -> None:
             raise ValueError(f"Program '{code}' not found.")
     except Exception as e:
         conn.rollback()
-        if "FOREIGN KEY" in str(e):
-            raise ValueError(
-                f"Cannot delete program '{code}': it is referenced by one or more students."
-            )
         raise ValueError(str(e))
 
 

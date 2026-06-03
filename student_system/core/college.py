@@ -78,10 +78,6 @@ def delete(code: str) -> None:
             raise ValueError(f"College '{code}' not found.")
     except Exception as e:
         conn.rollback()
-        if "FOREIGN KEY" in str(e):
-            raise ValueError(
-                f"Cannot delete college '{code}': it is referenced by one or more programs."
-            )
         raise ValueError(str(e))
 
 

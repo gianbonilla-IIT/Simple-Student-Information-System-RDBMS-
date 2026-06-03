@@ -45,9 +45,8 @@ def _validate(student_id: str, firstname: str, lastname: str,
         raise ValueError("Last name must contain letters only (hyphens and apostrophes allowed).")
 
     # Course
-    if not course:
-        raise ValueError("Course cannot be empty.")
-    if len(course) > 20:
+    # Course is now optional (can be NULL after program deletion)
+    if course and len(course) > 20:
         raise ValueError("Course code is too long.")
 
     # Year level
@@ -66,10 +65,10 @@ def _validate(student_id: str, firstname: str, lastname: str,
 
 
 def create(student_id: str, firstname: str, lastname: str,
-           course: str, year: str, gender: str) -> dict:
+           course: str | None = None, year: str = "", gender: str = "") -> dict:
     student_id = student_id.strip()
     firstname, lastname = firstname.strip(), lastname.strip()
-    course = course.strip().upper()
+    course = course.strip().upper() if course else None
     year, gender = year.strip(), gender.strip()
 
     _validate(student_id, firstname, lastname, course, year, gender)
@@ -103,10 +102,10 @@ def read(student_id: str) -> dict | None:
 
 
 def update(student_id: str, firstname: str, lastname: str,
-           course: str, year: str, gender: str) -> dict:
+           course: str | None = None, year: str = "", gender: str = "") -> dict:
     student_id = student_id.strip()
     firstname, lastname = firstname.strip(), lastname.strip()
-    course = course.strip().upper()
+    course = course.strip().upper() if course else None
     year, gender = year.strip(), gender.strip()
 
     _validate(student_id, firstname, lastname, course, year, gender)
