@@ -6,7 +6,14 @@ import tkinter as tk
 from tkinter import ttk
 
 from core.database import initialize_schema
-from core.seeder import seed
+
+# Try to import seeder, but don't fail if it's not available
+try:
+    from core.seeder import seed
+    HAS_SEEDER = True
+except ImportError:
+    HAS_SEEDER = False
+
 from ui.college_tab import CollegeTab
 from ui.program_tab import ProgramTab
 from ui.student_tab import StudentTab
@@ -15,7 +22,8 @@ from ui.student_tab import StudentTab
 def main():
     # Initialize DB and seed data before opening the window
     initialize_schema()
-    seed()
+    if HAS_SEEDER:
+        seed()
 
     root = tk.Tk()
     root.title("Student Information System")
