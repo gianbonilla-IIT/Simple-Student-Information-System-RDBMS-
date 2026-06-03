@@ -46,20 +46,23 @@ def read(code: str) -> dict | None:
     return _row_to_dict(row) if row else None
 
 
-def update(code: str, name: str) -> dict:
-    code, name = code.strip().upper(), name.strip()
-    _validate(code, name)
+def update(old_code: str, new_code: str, name: str) -> dict:
+    old_code = old_code.strip().upper()
+    new_code, name = new_code.strip().upper(), name.strip()
+    _validate(new_code, name)
     conn = get_connection()
     try:
-        cur = conn.execute("UPDATE college SET name = ? WHERE code = ?", (name, code))
+        cur = conn.execute("UPDATE college SET code = ?, name = ? WHERE code = ?", (new_code, name, old_code))
         conn.commit()
         if cur.rowcount == 0:
-            raise ValueError(f"College '{code}' not found.")
-        return {"code": code, "name": name}
+            raise ValueError(f"College '{old_code}' not found.")
+        return {"code": new_code, "name": name}
     except ValueError:
         raise
     except Exception as e:
         conn.rollback()
+        if "UNIQUE" in str(e):
+            raise ValueError(f"College code '{new_code}' already exists.")
         raise ValueError(str(e))
 
 

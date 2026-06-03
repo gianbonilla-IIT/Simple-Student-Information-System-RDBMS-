@@ -9,6 +9,7 @@ COLUMNS = ["name", "code"]
 class CollegeTab(tk.Frame):
     def __init__(self, parent, **kwargs):
         super().__init__(parent, **kwargs)
+        self._original_code = None  # Track original code for updates
         self._build()
 
     def _build(self):
@@ -42,10 +43,12 @@ class CollegeTab(tk.Frame):
     def _on_row_select(self, row: dict):
         for k, v in self._vars.items():
             v.set(row.get(k, ""))
+        self._original_code = row.get("code", "")  # Store original code for updates
 
     def _clear(self):
         for v in self._vars.values():
             v.set("")
+        self._original_code = None  # Clear the original code tracking
 
     def _add(self):
         try:
@@ -58,8 +61,12 @@ class CollegeTab(tk.Frame):
 
     def _update(self):
         try:
-            repo.update(self._vars["code"].get(), self._vars["name"].get())
+            if not self._original_code:
+                messagebox.showwarning("Warning", "Select a college first.")
+                return
+            repo.update(self._original_code, self._vars["code"].get(), self._vars["name"].get())
             self.table.refresh()
+            self._clear()
             messagebox.showinfo("Success", "College updated.")
         except ValueError as e:
             messagebox.showerror("Error", str(e))
