@@ -49,9 +49,23 @@ def main():
     notebook.pack(fill="both", expand=True, padx=8, pady=8)
 
     bg = "#f0f4f8"
-    notebook.add(CollegeTab(notebook, bg=bg), text="  Colleges  ")
-    notebook.add(ProgramTab(notebook, bg=bg), text="  Programs  ")
-    notebook.add(StudentTab(notebook, bg=bg), text="  Students  ")
+    college_tab = CollegeTab(notebook, bg=bg)
+    program_tab = ProgramTab(notebook, bg=bg)
+    student_tab = StudentTab(notebook, bg=bg)
+    
+    notebook.add(college_tab, text="  Colleges  ")
+    notebook.add(program_tab, text="  Programs  ")
+    notebook.add(student_tab, text="  Students  ")
+    
+    # Refresh dropdowns when tabs are shown
+    def on_tab_changed(event):
+        tab_index = notebook.index(notebook.select())
+        if tab_index == 1:  # Programs tab
+            program_tab.on_tab_shown()
+        elif tab_index == 2:  # Students tab
+            student_tab.on_tab_shown()
+    
+    notebook.bind("<<NotebookTabChanged>>", on_tab_changed)
 
     # Status bar
     tk.Label(root, text="Database: data/student_system.db  |  SQLite",

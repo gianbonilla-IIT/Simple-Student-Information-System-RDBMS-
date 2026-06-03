@@ -94,6 +94,10 @@ class StudentTab(tk.Frame):
 
         self._refresh_programs()
 
+    def on_tab_shown(self):
+        """Called when this tab becomes visible. Refreshes the programs dropdown."""
+        self._refresh_programs()
+
     # ── Course autocomplete ───────────────────────────────────────
 
     def _refresh_programs(self):
@@ -174,6 +178,7 @@ class StudentTab(tk.Frame):
                         d["course"], d["year"], d["gender"])
             self.table.refresh()
             self._clear()
+            self._refresh_programs()
             messagebox.showinfo("Success", f"Student '{d['id']}' added.")
         except ValueError as e:
             messagebox.showerror("Error", str(e))
@@ -184,6 +189,7 @@ class StudentTab(tk.Frame):
             repo.update(d["id"], d["firstname"], d["lastname"],
                         d["course"], d["year"], d["gender"])
             self.table.refresh()
+            self._refresh_programs()
             messagebox.showinfo("Success", f"Student '{d['id']}' updated.")
         except ValueError as e:
             messagebox.showerror("Error", str(e))
@@ -199,6 +205,7 @@ class StudentTab(tk.Frame):
             repo.delete(sid)
             self.table.refresh()
             self._clear()
+            self._refresh_programs()
             messagebox.showinfo("Success", f"Student '{sid}' deleted.")
         except ValueError as e:
             messagebox.showerror("Error", str(e))

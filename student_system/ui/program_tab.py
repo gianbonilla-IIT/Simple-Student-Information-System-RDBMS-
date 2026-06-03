@@ -53,6 +53,10 @@ class ProgramTab(tk.Frame):
                           ("Refresh Colleges", self._refresh_colleges)]:
             ttk.Button(btn_frame, text=text, command=cmd).pack(side="left", padx=4)
 
+    def on_tab_shown(self):
+        """Called when this tab becomes visible. Refreshes the colleges dropdown."""
+        self._refresh_colleges()
+
     def _refresh_colleges(self):
         colleges, _ = college_repo.list_all(page_size=200)
         self._college_combo["values"] = [c["code"] for c in colleges]
@@ -73,6 +77,7 @@ class ProgramTab(tk.Frame):
                         self._vars["college"].get())
             self.table.refresh()
             self._clear()
+            self._refresh_colleges()
             messagebox.showinfo("Success", "Program added.")
         except ValueError as e:
             messagebox.showerror("Error", str(e))
@@ -93,6 +98,7 @@ class ProgramTab(tk.Frame):
                 new_code=new_code if new_code != self._original_code else None
             )
             self.table.refresh()
+            self._refresh_colleges()
             
             # If code was changed, update tracking
             if new_code != self._original_code:
