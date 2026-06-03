@@ -73,8 +73,10 @@ class ProgramTab(tk.Frame):
 
     def _add(self):
         try:
-            repo.create(self._vars["code"].get(), self._vars["name"].get(),
-                        self._vars["college"].get())
+            college = self._vars["college"].get()
+            # Convert "N/A" back to empty string for submission
+            college = "" if college == "N/A" else college
+            repo.create(self._vars["code"].get(), self._vars["name"].get(), college)
             self.table.refresh()
             self._clear()
             self._refresh_colleges()
@@ -91,13 +93,18 @@ class ProgramTab(tk.Frame):
                 messagebox.showwarning("Warning", "Select a program first.")
                 return
             
+            college = self._vars["college"].get()
+            # Convert "N/A" back to empty string for submission
+            college = "" if college == "N/A" else college
+            
             repo.update(
                 self._original_code,
                 self._vars["name"].get(),
-                self._vars["college"].get(),
+                college,
                 new_code=new_code if new_code != self._original_code else None
             )
             self.table.refresh()
+            self._refresh_colleges()
             self._refresh_colleges()
             
             # If code was changed, update tracking

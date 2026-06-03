@@ -6,10 +6,14 @@ NAME_PATTERN = re.compile(r"^[A-Za-zÀ-ÖØ-öø-ÿ0-9\s\-',\.&]+$")
 
 
 def _row_to_dict(row) -> dict:
-    return {"code": row["code"], "name": row["name"], "college": row["college"]}
+    return {
+        "code": row["code"],
+        "name": row["name"],
+        "college": row["college"] if row["college"] else "N/A"
+    }
 
 
-def _validate(code: str, name: str, college_code: str | None) -> None:
+def _validate(code: str, name: str, college_code: str) -> None:
     if not code:
         raise ValueError("Program code cannot be empty.")
     if len(code) > 20:
@@ -22,14 +26,15 @@ def _validate(code: str, name: str, college_code: str | None) -> None:
         raise ValueError("Program name must be 150 characters or fewer.")
     if not NAME_PATTERN.match(name):
         raise ValueError("Program name contains invalid characters.")
-    # College code is now optional (can be NULL after college deletion)
-    if college_code and len(college_code) > 20:
+    if not college_code:
+        raise ValueError("College code cannot be empty.")
+    if len(college_code) > 20:
         raise ValueError("College code must be 20 characters or fewer.")
 
 
-def create(code: str, name: str, college_code: str | None = None) -> dict:
+def create(code: str, name: str, college_code: str) -> dict:
     code, name = code.strip().upper(), name.strip()
-    college_code = college_code.strip().upper() if college_code else None
+    college_code = college_code.strip().upper()
     _validate(code, name, college_code)
     conn = get_connection()
     try:
@@ -49,42 +54,50 @@ def create(code: str, name: str, college_code: str | None = None) -> dict:
 
 
 def read(code: str) -> dict | None:
-    code = code.strip().upper()
+    code_upper = code.strip().upper()
     conn = get_connection()
-    row = conn.execute("SELECT * FROM program WHERE code = ?", (code,)).fetchone()
+    # Try uppercase first, then fallback to original in case of mixed case in database
+    row = conn.execute("SELECT * FROM program WHERE code = ?", (code_upper,)).fetchone()
+    if not row:
+        # Fallback to exact match for mixed case databases
+        row = conn.execute("SELECT * FROM program WHERE code = ?", (code.strip(),)).fetchone()
     return _row_to_dict(row) if row else None
 
 
-def update(code: str, name: str, college_code: str | None = None, new_code: str | None = None) -> dict:
+def update(code: str, name: str, college_code: str, new_code: str | None = None) -> dict:
     """Update a program. If new_code is provided, changes the program code (cascades to students)."""
-    code, name = code.strip().upper(), name.strip()
-    college_code = college_code.strip().upper() if college_code else None
-    new_code = new_code.strip().upper() if new_code else code
+    # Preserve original code for database lookup in case of mixed case in database
+    original_code = code.strip()
+    code_upper, name = code.strip().upper(), name.strip()
+    college_code = college_code.strip().upper()
+    new_code_upper = new_code.strip().upper() if new_code else code_upper
     
-    _validate(new_code, name, college_code)
+    _validate(new_code_upper, name, college_code)
     conn = get_connection()
     try:
         # If code is being changed, update the primary key (triggers ON UPDATE CASCADE)
-        if new_code != code:
+        if new_code_upper != code_upper:
             # First, check if new code already exists
-            existing = conn.execute("SELECT code FROM program WHERE code = ?", (new_code,)).fetchone()
+            existing = conn.execute("SELECT code FROM program WHERE code = ?", (new_code_upper,)).fetchone()
             if existing:
-                raise ValueError(f"Program code '{new_code}' already exists.")
+                raise ValueError(f"Program code '{new_code_upper}' already exists.")
             # Update program: this will cascade to all students' course field
+            # Use original_code in WHERE clause to handle mixed case in database
             conn.execute(
                 "UPDATE program SET code = ?, name = ?, college = ? WHERE code = ?",
-                (new_code, name, college_code, code)
+                (new_code_upper, name, college_code, original_code)
             )
         else:
             # Just update name and college
+            # Use original_code in WHERE clause to handle mixed case in database
             conn.execute(
                 "UPDATE program SET name = ?, college = ? WHERE code = ?",
-                (name, college_code, code)
+                (name, college_code, original_code)
             )
         conn.commit()
         
         # Verify the update succeeded
-        row = conn.execute("SELECT * FROM program WHERE code = ?", (new_code,)).fetchone()
+        row = conn.execute("SELECT * FROM program WHERE code = ?", (new_code_upper,)).fetchone()
         if not row:
             raise ValueError(f"Program update failed.")
         return _row_to_dict(row)
@@ -95,22 +108,31 @@ def update(code: str, name: str, college_code: str | None = None, new_code: str 
         if "FOREIGN KEY" in str(e):
             raise ValueError(f"College '{college_code}' does not exist.")
         if "UNIQUE" in str(e):
-            raise ValueError(f"Program code '{new_code}' already exists.")
+            raise ValueError(f"Program code '{new_code_upper}' already exists.")
         raise ValueError(str(e))
 
 
 def delete(code: str) -> None:
-    code = code.strip().upper()
-    if not code:
+    original_code = code.strip()
+    code_upper = code.strip().upper()
+    if not code_upper:
         raise ValueError("Program code cannot be empty.")
     conn = get_connection()
     try:
-        cur = conn.execute("DELETE FROM program WHERE code = ?", (code,))
+        # Try uppercase first, then fallback to original
+        cur = conn.execute("DELETE FROM program WHERE code = ?", (code_upper,))
+        if cur.rowcount == 0:
+            # Fallback to exact match for mixed case databases
+            cur = conn.execute("DELETE FROM program WHERE code = ?", (original_code,))
         conn.commit()
         if cur.rowcount == 0:
-            raise ValueError(f"Program '{code}' not found.")
+            raise ValueError(f"Program '{code_upper}' not found.")
     except Exception as e:
         conn.rollback()
+        if "FOREIGN KEY" in str(e):
+            raise ValueError(
+                f"Cannot delete program '{code}': it is referenced by one or more students."
+            )
         raise ValueError(str(e))
 
 

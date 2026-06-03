@@ -173,6 +173,8 @@ class StudentTab(tk.Frame):
 
     def _add(self):
         d = {k: v.get() for k, v in self._vars.items()}
+        # Convert "NOT ENROLLED" back to empty string for submission
+        d["course"] = "" if d["course"] == "NOT ENROLLED" else d["course"]
         try:
             repo.create(d["id"], d["firstname"], d["lastname"],
                         d["course"], d["year"], d["gender"])
@@ -185,6 +187,8 @@ class StudentTab(tk.Frame):
 
     def _update(self):
         d = {k: v.get() for k, v in self._vars.items()}
+        # Convert "NOT ENROLLED" back to empty string for submission
+        d["course"] = "" if d["course"] == "NOT ENROLLED" else d["course"]
         try:
             repo.update(d["id"], d["firstname"], d["lastname"],
                         d["course"], d["year"], d["gender"])
