@@ -89,7 +89,7 @@ class StudentTab(tk.Frame):
         btn_frame.pack(fill="x", padx=8, pady=(0, 8))
         for text, cmd in [("Add", self._add), ("Update", self._update),
                           ("Delete", self._delete), ("Clear", self._clear),
-                          ("Refresh Programs", self._refresh_programs)]:
+                          ("Refresh", self._refresh_programs)]:
             ttk.Button(btn_frame, text=text, command=cmd).pack(side="left", padx=4)
 
         self._refresh_programs()

@@ -37,7 +37,8 @@ class CollegeTab(tk.Frame):
         btn_frame = tk.Frame(self)
         btn_frame.pack(fill="x", padx=8, pady=(0, 8))
         for text, cmd in [("Add", self._add), ("Update", self._update),
-                          ("Delete", self._delete), ("Clear", self._clear)]:
+                          ("Delete", self._delete), ("Clear", self._clear),
+                          ("Refresh", self.table.refresh)]:
             ttk.Button(btn_frame, text=text, command=cmd).pack(side="left", padx=4)
 
     def _on_row_select(self, row: dict):
