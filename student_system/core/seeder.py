@@ -1,5 +1,4 @@
 import random
-import string
 import sys
 import os
 
@@ -11,7 +10,6 @@ try:
     from .database import get_connection
 except ImportError:
     from core.database import get_connection
-
 
 
 COLLEGES = [
